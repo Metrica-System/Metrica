@@ -85,65 +85,27 @@ aplicáveis. - Avaliações. - Links e configurações de aplicação. -
 Respostas e comentários. - Resultados. - Relatórios. - Planos de ação. -
 Histórico.
 
-# 4. Administração Geral: clientes, contratos e liberação de acesso
+# 4. Administração Geral: clientes e liberação de acesso
 
 ## 4.1 Responsabilidades
 
-O Administrador Geral poderá: - Cadastrar, consultar, editar, ativar,
-suspender e bloquear contas de clientes. - Cadastrar e editar dados
-comerciais e contratuais. - Registrar valor contratado e condições
-acordadas. - Registrar pagamento realizado fora da plataforma. -
-Informar data, valor, situação e referência/comprovante do pagamento,
-quando aplicável. - Definir início e término da vigência. - Liberar,
-suspender ou bloquear o acesso. - Renovar ou registrar novo contrato,
-preservando o histórico. - Consultar empresas cadastradas e indicadores
-de utilização. - Consultar o histórico de ações administrativas.
+O Administrador Geral poderá: - Cadastrar, consultar, editar, ativar, suspender e bloquear contas de clientes. - Liberar, suspender ou bloquear o acesso. - Consultar empresas cadastradas e indicadores de utilização. - Consultar o histórico de ações administrativas.
 
 ## 4.2 Fluxo de autorização
 
 1.  A Administração Geral cadastra a conta do cliente.
-2.  O pagamento é realizado externamente, conforme o acordo comercial.
-3.  O Administrador Geral confirma e registra o pagamento no sistema.
-4.  O Administrador Geral registra o contrato e o período de vigência.
-5.  O sistema libera o acesso quando a conta estiver ativa e a vigência
-    tiver começado.
-6.  O cliente passa a utilizar as funcionalidades disponíveis durante o
-    período contratado.
-7.  Ao final da vigência, o acesso é bloqueado, salvo renovação ou novo
-    contrato válido.
-
-O registro de pagamento não deve, isoladamente, liberar o acesso antes
-da data de início contratual.
+2.  O acesso é liberado manualmente pelo Administrador Geral após a confirmação do acordo comercial externo.
+3.  O cliente passa a utilizar as funcionalidades disponíveis.
+4.  O acesso pode ser suspenso ou bloqueado a qualquer momento pela Administração Geral.
 
 ## 4.3 Modelo comercial
 
--   Pagamento único vinculado a contrato.
--   Sem cobrança recorrente obrigatória dentro da plataforma.
--   Sem planos comerciais com diferentes conjuntos de funcionalidades
-    nesta versão.
--   Todas as contas ativas e com contrato vigente terão acesso ao
-    conjunto de funcionalidades disponibilizadas.
+-   Negociações e pagamentos são realizados integralmente fora da plataforma.
+-   A plataforma não processa pagamentos nem gerencia vigências contratuais automaticamente.
 -   Cadastro ilimitado de empresas, sem cobrança adicional por empresa.
--   O acesso não será considerado vitalício: sua validade dependerá da
-    vigência contratual.
+-   O acesso é controlado manualmente via status da conta.
 
-## 4.4 Status separados
-
-### Status do pagamento
-
--   Pendente
--   Pago
--   Estornado
--   Cancelado
-
-### Status do contrato
-
--   Aguardando início
--   Vigente
--   Expirado
--   Encerrado
-
-### Status da conta
+## 4.4 Status da conta
 
 -   Ativa
 -   Suspensa
@@ -154,39 +116,20 @@ da data de início contratual.
   -----------------------------------------------------------------------
   Situação                            Resultado
   ----------------------------------- -----------------------------------
-  Conta ativa + contrato vigente +    Acesso liberado
-  data de início alcançada            
-
-  Pagamento registrado, mas contrato  Acesso aguarda a data de início
-  ainda não iniciado                  
-
-  Contrato expirado, sem renovação    Acesso administrativo bloqueado
-
+  Conta ativa                         Acesso liberado
   Conta suspensa ou bloqueada         Acesso administrativo bloqueado
-
-  Contrato renovado                   Acesso conforme a nova vigência
   -----------------------------------------------------------------------
 
-A suspensão ou expiração não deverá apagar automaticamente os dados. A
+A suspensão ou bloqueio não deverá apagar automaticamente os dados. A
 política de retenção, exportação e eventual exclusão deverá ser definida
-conforme contrato e obrigações aplicáveis.
+conforme acordo externo e obrigações aplicáveis.
 
-## 4.5 Dados do contrato e pagamento
-
-Campos sugeridos: - Identificador do contrato. - Conta do cliente. -
-Número ou referência contratual. - Valor contratado. - Forma/condição de
-pagamento. - Data do pagamento. - Status do pagamento. - Referência ou
-arquivo de comprovante, se utilizado. - Usuário administrador que
-registrou/confirmou o pagamento. - Data e hora do registro. - Data de
-início da vigência. - Data de término da vigência. - Status do
-contrato. - Observações administrativas. - Histórico de alterações.
-
-## 4.6 Links de avaliações após vencimento ou suspensão
+## 4.5 Links de avaliações após vencimento ou suspensão
 
 O comportamento dos links públicos deverá ser uma regra explícita.
 Recomenda-se que o sistema permita configurar e aplicar uma política
 clara para impedir novas respostas quando a avaliação estiver encerrada
-ou quando a conta estiver suspensa/sem vigência. A política não deverá
+ou quando a conta estiver suspensa/bloqueada. A política não deverá
 apagar respostas já recebidas.
 
 # 5. Usuários, contas pessoais e permissões

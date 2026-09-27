@@ -1,0 +1,395 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Administração & Multi-tenancy ---
+
+// Tabela: Cliente (Contas de Clientes)
+model Cliente {
+  id            String    @id @default(uuid())
+  nome          String
+  email         String    @unique
+  status        StatusCliente @default(ATIVO)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  membros       MembroCliente[]
+  configuracoes ConfiguracaoCliente?
+  empresas      Empresa[]
+}
+
+enum StatusCliente {
+  ATIVO
+  SUSPENSO
+  BLOQUEADO
+}
+
+// Tabela: ConfiguracaoCliente (Configurações do Cliente)
+model ConfiguracaoCliente {
+  id       String @id @default(uuid())
+  clienteId String @unique
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  config   Json   // Preferências gerais e parâmetros operacionais
+}
+
+// --- Usuários & Controle de Acesso ---
+
+// Tabela: Perfil (Perfis de Usuários)
+model Perfil {
+  id            String   @id @default(uuid())
+  userId        String   @unique // Vinculado ao ID do Supabase Auth
+  nomeCompleto  String
+  telefone      String?
+  avatarUrl     String?
+  email         String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  membrosCliente    MembroCliente[]
+  membrosEmpresa    MembroEmpresa[]
+  preferencias      PreferenciasUsuario?
+  prefsDashboard    PreferenciasDashboard?
+}
+
+// Tabela: MembroCliente (Vínculos de Usuários com Contas de Clientes)
+model MembroCliente {
+  id        String @id @default(uuid())
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  perfilId  String
+  perfil    Perfil @relation(fields: [perfilId], references: [id])
+  papelId   String
+  papel     Papel    @relation(fields: [papelId], references: [id])
+
+  @@unique([clienteId, perfilId])
+}
+
+// Tabela: Papel (Papéis/Perfis de Acesso)
+model Papel {
+  id          String       @id @default(uuid())
+  nome        String       @unique // ex: "Admin", "Analista", "Leitor"
+  permissoes Permission[]
+  membros     MembroCliente[]
+}
+
+// Tabela: Permission (Permissões Detalhadas)
+model Permission {
+  id    String @id @default(uuid())
+  codigo String @unique // ex: "empresas.read", "avaliacoes.publish"
+  papeis Papel[]
+}
+
+// Tabela: MembroEmpresa (Vínculos de Usuários com Empresas Específicas)
+model MembroEmpresa {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  perfilId String
+  perfil   Perfil @relation(fields: [perfilId], references: [id])
+
+  @@unique([empresaId, perfilId])
+}
+
+// Tabela: PreferenciasUsuario (Preferências Pessoais do Usuário)
+model PreferenciasUsuario {
+  id       String  @id @default(uuid())
+  perfilId String  @unique
+  perfil   Perfil @relation(fields: [perfilId], references: [id])
+  tema    String  @default("light")
+  idioma   String  @default("pt-BR")
+  config   Json?
+}
+
+// Tabela: PreferenciasDashboard (Personalização da Dashboard por Usuário)
+model PreferenciasDashboard {
+  id       String  @id @default(uuid())
+  perfilId String  @unique
+  perfil   Perfil @relation(fields: [perfilId], references: [id])
+  layout    Json    // Posições e visibilidade de widgets
+  filtros   Json?   // Filtros padrão
+}
+
+// --- Estrutura da Empresa ---
+
+// Tabela: Empresa (Empresas Avaliadas)
+model Empresa {
+  id        String   @id @default(uuid())
+  clienteId String
+  cliente    Cliente @relation(fields: [clienteId], references: [id])
+  nome      String
+  cnpj      String?
+  createdAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  setores       Setor[]
+  departamentos Departamento[]
+  turnos        Turno[]
+  avaliacoes   Avaliacao[]
+  membros       MembroEmpresa[]
+}
+
+// Tabela: Setor (Setores da Empresa)
+model Setor {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nome      String
+  createdAt DateTime @default(now())
+}
+
+// Tabela: Departamento (Departamentos da Empresa)
+model Departamento {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nome      String
+  createdAt DateTime @default(now())
+}
+
+// Tabela: Turno (Turnos de Trabalho)
+model Turno {
+  id        String  @id @default(uuid())
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  nome      String
+  createdAt DateTime @default(now())
+}
+
+// --- Banco de Questões & Ferramentas ---
+
+// Tabela: FerramentaAvaliacao (Ferramentas de Avaliação/Metodologias)
+model FerramentaAvaliacao {
+  id          String   @id @default(uuid())
+  nome        String
+  sigla       String   @unique
+  descricao   String?
+  createdAt   DateTime @default(now())
+  versoes    VersaoFerramenta[]
+}
+
+// Tabela: VersaoFerramenta (Versões das Ferramentas de Avaliação)
+model VersaoFerramenta {
+  id                String   @id @default(uuid())
+  ferramentaId     String
+  ferramenta       FerramentaAvaliacao @relation(fields: [ferramentaId], references: [id])
+  numeroVersao     String
+  descricao        String?
+  createdAt         DateTime @default(now())
+  
+  questoes         Questao[]
+  avaliacoes       Avaliacao[]
+}
+
+// Tabela: GrupoQuestao (Grupos de Questões)
+model GrupoQuestao {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String?
+  questoes    Questao[]
+}
+
+// Tabela: FatorPsicossocial (Fatores Psicossociais)
+model FatorPsicossocial {
+  id          String   @id @default(uuid())
+  nome        String   @unique
+  descricao   String?
+  questoes    Questao[]
+}
+
+// Tabela: Questao (Questões do Banco)
+model Questao {
+  id                    String             @id @default(uuid())
+  versaoFerramentaId    String
+  versaoFerramenta      VersaoFerramenta   @relation(fields: [versaoFerramentaId], references: [id])
+  grupoId               String?
+  grupo                 GrupoQuestao?      @relation(fields: [grupoId], references: [id])
+  fatorId               String?
+  fator                 FatorPsicossocial? @relation(fields: [fatorId], references: [id])
+  texto                 String
+  escalaId              String
+  escala                EscalaResposta     @relation(fields: [escalaId], references: [id])
+  ordem                 Int
+  permitirComentario    Boolean            @default(false)
+  comentarioObrigatorio Boolean         @default(false)
+  status                String             @default("ATIVO")
+  createdAt             DateTime           @default(now())
+
+  respostas             RespostaQuestao[]
+}
+
+// Tabela: EscalaResposta (Escalas de Resposta)
+model EscalaResposta {
+  id          String           @id @default(uuid())
+  nome        String
+  opcoes      OpcaoResposta[]
+  questoes    Questao[]
+}
+
+// Tabela: OpcaoResposta (Opções de Resposta e Pontuação)
+model OpcaoResposta {
+  id              String        @id @default(uuid())
+  escalaId        String
+  escala          EscalaResposta @relation(fields: [escalaId], references: [id])
+  texto           String
+  pontuacao       Decimal
+  ordem           Int
+  
+  regrasPontuacao RegraPontuacao[]
+}
+
+// Tabela: RegraPontuacao (Regras de Pontuação e Interpretação)
+model RegraPontuacao {
+  id               String         @id @default(uuid())
+  opcaoId          String
+  opcao           OpcaoResposta @relation(fields: [opcaoId], references: [id])
+  classificacao    String         // ex: "Baixo", "Médio", "Alto"
+  interpretacao    String
+  recomendacao     String?
+}
+
+// --- Avaliações & Participação ---
+
+// Tabela: Avaliacao (Configurações de Avaliações Aplicadas)
+model Avaliacao {
+  id                String           @id @default(uuid())
+  clienteId         String
+  cliente           Cliente          @relation(fields: [clienteId], references: [id])
+  empresaId         String
+  empresa           Empresa          @relation(fields: [empresaId], references: [id])
+  versaoFerramentaId String
+  versaoFerramenta   VersaoFerramenta @relation(fields: [versaoFerramentaId], references: [id])
+  nome              String
+  dataInicio         DateTime
+  dataFim           DateTime
+  isAnonimo         Boolean          @default(true)
+  permitirComentarios Boolean        @default(true)
+  status            StatusAvaliacao @default(RASCUNHO)
+  linkAcesso       String           @unique
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  participantes     Participante[]
+  respostas         Resposta[]
+}
+
+enum StatusAvaliacao {
+  RASCUNHO
+  PUBLICADA
+  PAUSADA
+  ENCERRADA
+}
+
+// Tabela: Participante (Participantes das Avaliações)
+model Participante {
+  id           String     @id @default(uuid())
+  avaliacaoId  String
+  avaliacao    Avaliacao @relation(fields: [avaliacaoId], references: [id])
+  idExterno    String?    // ID do sistema da empresa
+  nome         String?
+  email        String?
+  setorId      String?
+  departamentoId String?
+  turnoId      String?
+  createdAt    DateTime   @default(now())
+
+  respostas    Resposta[]
+}
+
+// Tabela: Resposta (Respostas Enviadas)
+model Resposta {
+  id            String     @id @default(uuid())
+  avaliacaoId  String
+  avaliacao    Avaliacao @relation(fields: [avaliacaoId], references: [id])
+  participanteId String?
+  participante   Participante? @relation(fields: [participanteId], references: [id])
+  enviadoEm     DateTime   @default(now())
+  
+  respostasQuestao RespostaQuestao[]
+}
+
+// Tabela: RespostaQuestao (Respostas Individuais por Questão)
+model RespostaQuestao {
+  id         String   @id @default(uuid())
+  respostaId String
+  resposta   Resposta @relation(fields: [respostaId], references: [id])
+  questaoId  String
+  questao    Questao @relation(fields: [questaoId], references: [id])
+  opcaoId    String
+  opcao      OpcaoResposta @relation(fields: [opcaoId], references: [id])
+  comentario String?
+}
+
+// --- Resultados & Relatórios ---
+
+// Tabela: Resultado (Consolidação de Resultados)
+model Resultado {
+  id              String   @id @default(uuid())
+  avaliacaoId    String
+  avaliacao      Avaliacao @relation(fields: [avaliacaoId], references: [id])
+  fatorId        String?
+  grupoId         String?
+  pontuacao       Decimal
+  percentual      Decimal
+  classificacao   String
+  interpretacao  String?
+  calculadoEm    DateTime @default(now())
+  idExecucaoCalculo String
+}
+
+// Tabela: Relatorio (Relatórios Gerados)
+model Relatorio {
+  id            String   @id @default(uuid())
+  avaliacaoId  String
+  avaliacao    Avaliacao @relation(fields: [avaliacaoId], references: [id])
+  titulo         String
+  conteudo       Json     // Dados estruturados do relatório
+  versao       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  planosAcao   PlanoAcao[]
+}
+
+// Tabela: PlanoAcao (Planos de Ação)
+model PlanoAcao {
+  id          String   @id @default(uuid())
+  relatorioId String
+  relatorio   Relatorio @relation(fields: [relatorioId], references: [id])
+  descricao   String
+  responsavel String
+  prazo       DateTime
+  status      String    @default("ABERTO")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  itens       ItemPlanoAcao[]
+}
+
+// Tabela: ItemPlanoAcao (Itens do Plano de Ação)
+model ItemPlanoAcao {
+  id            String     @id @default(uuid())
+  planoAcaoId  String
+  planoAcao    PlanoAcao @relation(fields: [planoAcaoId], references: [id])
+  descricao     String
+  status        String
+  evidencia     String?
+  updatedAt     DateTime   @updatedAt
+}
+
+// Tabela: EventoAuditoria (Logs de Auditoria Administrativa)
+model EventoAuditoria {
+  id        String   @id @default(uuid())
+  usuarioId String
+  acao      String
+  entidade  String
+  entidadeId String
+  valorAntigo Json?
+  valorNovo   Json?
+  timestamp DateTime @default(now())
+  ipAddress String?
+}
